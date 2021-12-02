@@ -6,6 +6,8 @@ This is the firmware for the STM32 FlexTrak board.
 
 ## Releases
 
+V1.01	-	Send APRS settings
+
 V1.00	-	Prototype software
 		Small mods to suit first prototype board
 		Added GPS speed and direction

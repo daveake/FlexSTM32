@@ -4,7 +4,7 @@
 |                                                                                                        |
 \*------------------------------------------------------------------------------------------------------*/
 
-#define   VERSION     "V1.00"
+#define   VERSION     "V1.01"
 #define   PRODUCT     "FlexTrak"
 #define   DESCRIPTION "FlexTrak STM32"
 
@@ -34,8 +34,8 @@ HardwareSerial Serial6(PA12, PA11);   // APRS Rx/Tx
   #define WIREBUS                PB10
   
   #define APRS_ENABLE            PB15
-  #define APRS_PTT               PB2
-  #define APRS_DATA              PA8
+  #define APRS_PTT               PB14 // PB2
+  #define APRS_DATA              PA11 // PA8
   
   #define CUTDOWN                PB14
 
@@ -207,8 +207,8 @@ void SetDefaults(void)
 
   // APRS Settings
   Settings.APRS_Frequency = 144.8;
-  strcpy(Settings.APRS_Callsign, "M0RPI");
-  Settings.APRS_SSID = 11;
+  strcpy(Settings.APRS_Callsign, "");
+  Settings.APRS_SSID = 0;
   Settings.APRS_PathAltitude = 1500;
   Settings.APRS_HighUseWide2 = 1;
   Settings.APRS_TxInterval = 20;  // 60;
@@ -879,4 +879,14 @@ void SendSettings(void)
   Serial.printf("PC=%.1f\n", Settings.Prediction_CDA);
   Serial.printf("PW=%.2f\n", Settings.Prediction_Weight);
   Serial.printf("PL=%ld\n", Settings.Prediction_Altitude);
+
+  Serial.printf("AF=%.4f\n", Settings.APRS_Frequency);
+  Serial.printf("AP=%s\n", Settings.APRS_Callsign);
+  Serial.printf("AS=%d\n", Settings.APRS_SSID);
+  Serial.printf("AA=%d\n", Settings.APRS_PathAltitude);
+  Serial.printf("AW=%d\n", Settings.APRS_HighUseWide2 > 0);
+  Serial.printf("AI=%d\n", Settings.APRS_TxInterval);
+  Serial.printf("AM=%d\n", Settings.APRS_PreEmphasis > 0);
+  Serial.printf("AR=%d\n", Settings.APRS_Random);
+  Serial.printf("AT=%d\n", Settings.APRS_TelemInterval);
 }
