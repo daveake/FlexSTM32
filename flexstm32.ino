@@ -4,7 +4,7 @@
 |                                                                                                        |
 \*------------------------------------------------------------------------------------------------------*/
 
-#define   VERSION     "V1.01"
+#define   VERSION     "V1.02"
 #define   PRODUCT     "FlexTrak"
 #define   DESCRIPTION "FlexTrak STM32"
 
@@ -35,7 +35,7 @@ HardwareSerial Serial6(PA12, PA11);   // APRS Rx/Tx
   
   #define APRS_ENABLE            PB15
   #define APRS_PTT               PB14 // PB2
-  #define APRS_DATA              PA11 // PA8
+  #define APRS_DATA              PA8 // PA11
   
   #define CUTDOWN                PB14
 

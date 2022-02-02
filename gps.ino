@@ -114,9 +114,7 @@ void ProcessNMEA(char *Buffer, int Count)
     {
       int lock;
       char hdop[16], Altitude[16];
-      
-      // Serial.print(Buffer+1);
-      
+           
       if (sscanf(Buffer+7, "%16[^,],%16[^,],%c,%[^,],%c,%d,%d,%[^,],%[^,]", TimeString, LatString, &ns, LongString, &ew, &lock, &Satellites, hdop, Altitude) >= 1)
       { 
         // $GPGGA,124943.00,5157.01557,N,00232.66381,W,1,09,1.01,149.3,M,48.6,M,,*42
@@ -177,9 +175,9 @@ void ProcessNMEA(char *Buffer, int Count)
         }        
       }
       
-      Serial.print(GPS.Hours); Serial.print(":"); Serial.print(GPS.Minutes); Serial.print(":"); Serial.print(GPS.Seconds);Serial.print(" - ");
-      Serial.print(GPS.Latitude, 6); Serial.print(',');Serial.print(GPS.Longitude, 6);Serial.print(',');Serial.print(GPS.Altitude);Serial.print(',');
-      Serial.println(GPS.Satellites);
+      // Serial.print(GPS.Hours); Serial.print(":"); Serial.print(GPS.Minutes); Serial.print(":"); Serial.print(GPS.Seconds);Serial.print(" - ");
+      // Serial.print(GPS.Latitude, 6); Serial.print(',');Serial.print(GPS.Longitude, 6);Serial.print(',');Serial.print(GPS.Altitude);Serial.print(',');
+      // Serial.println(GPS.Satellites);
     }
     else if (strncmp((char *)Buffer+3, "GSV", 3) == 0)
     {
