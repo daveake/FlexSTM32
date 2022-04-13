@@ -4,12 +4,12 @@
 |                                                                                                        |
 \*------------------------------------------------------------------------------------------------------*/
 
-#define   VERSION     "V1.02"
+#define   VERSION     "V1.04"
 #define   PRODUCT     "FlexTrak"
 #define   DESCRIPTION "FlexTrak STM32"
 
 #define SIG_1   'D'
-#define SIG_2   'B'
+#define SIG_2   'A'
 
 #include <FlashStorage_STM32.h>
 
@@ -188,7 +188,7 @@ void SetDefaults(void)
   const static char DefaultPayloadID[] PROGMEM = "CHANGEME";
   strcpy_P(Settings.PayloadID, (char *)DefaultPayloadID);
 
-  const static char DefaultFieldList[] PROGMEM = "0123456789ACD";
+  const static char DefaultFieldList[] PROGMEM = "0123456789ABCD";
   strcpy_P(Settings.FieldList, (char *)DefaultFieldList);
 
   // GPS Settings
@@ -433,7 +433,7 @@ int ProcessPredictionCommand(char *Line)
     // Landing Altitude
     int LandingAltitude = atol(Line+1);
     
-    if ((LandingAltitude >= 0) && (LandingAltitude <= 20))
+    if ((LandingAltitude >= 0) && (LandingAltitude <= 5000))
     {
       Settings.Prediction_Altitude = LandingAltitude;
       OK = 1;
