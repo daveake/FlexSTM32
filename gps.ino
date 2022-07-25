@@ -104,7 +104,7 @@ void ProcessNMEA(char *Buffer, int Count)
   char ns, ew;
   char TimeString[16], LatString[16], LongString[16], Temp[4];
 
-  Serial.print(Buffer);
+  // Serial.print(Buffer);
 
   if (GPSChecksumOK(Buffer, Count))
   {
@@ -152,6 +152,10 @@ void ProcessNMEA(char *Buffer, int Count)
         {
           GPS.MinimumAltitude = GPS.Altitude;           
         }
+
+        Serial.printf("GPS=%02d:%02d:%02d,%.5f,%.5f,%ld,%d\r\n", GPS.Hours, GPS.Minutes, GPS.Seconds, GPS.Latitude, GPS.Longitude, GPS.Altitude, GPS.Satellites);
+
+        Serial.printf("MODE=%d,%.1f,%ld\r\n", GPS.FlightMode, GPS.AscentRate, GPS.MinimumAltitude);
 
         // Launched?
         if ((GPS.AscentRate >= 1.0) && (GPS.Altitude > (GPS.MinimumAltitude+150)) && (GPS.FlightMode == fmIdle))

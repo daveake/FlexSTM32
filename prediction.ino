@@ -12,7 +12,7 @@ struct TPosition
 struct TPosition Positions[SLOTS];		// 100m slots from 0 to 45km
 
 float PreviousLatitude, PreviousLongitude, cd_area;
-unsigned long PreviousAltitude;
+long PreviousAltitude;
 
 int GetSlot(int32_t Altitude)
 {
@@ -52,22 +52,13 @@ float CalculateAirDensity(float Altitude)
   return Pressure / (0.2869 * (Temperature + 273.1));
 }
 
-float CalculateDescentRate(float Weight, float CDTimesArea, float Altitude)
-{
-  float Density;
-  
-  Density = CalculateAirDensity(Altitude);
-  
-  return sqrt((Weight * 9.81)/(0.5 * Density * CDTimesArea));
-}
-
 float CalculateCDA(float Weight, float Altitude, float DescentRate)
 {
   float Density;
   
   Density = CalculateAirDensity(Altitude);
   
-  Serial.printf("Alt %f, Rate %f, CDA %f\n", Altitude, DescentRate, (Weight * 9.81)/(0.5 * Density * DescentRate * DescentRate));
+  // Serial.printf("Alt %f, Rate %f, CDA %f\r\n", Altitude, DescentRate, (Weight * 9.81)/(0.5 * Density * DescentRate * DescentRate));
   
   return (Weight * 9.81)/(0.5 * Density * DescentRate * DescentRate);
 }
@@ -91,8 +82,6 @@ void CheckPrediction(void)
     
     NextCheck = millis() + POLL_PERIOD * 1000;
 
-    // Serial.printf("FLIGHT MODE = %d ***\n", GPS.FlightMode);
-    
     if ((GPS.FlightMode >= fmLaunched) && (GPS.FlightMode < fmLanded))
     {
       // Ascent or descent?
@@ -104,26 +93,26 @@ void CheckPrediction(void)
         // Deltas are scaled to be horizontal distance per second (i.e. speed)
         Positions[Slot].LatitudeDelta = (GPS.Latitude - PreviousLatitude) / POLL_PERIOD;
         Positions[Slot].LongitudeDelta = (GPS.Longitude - PreviousLongitude) / POLL_PERIOD;
-        Serial.printf("Slot %d (%" PRId32 "): %f, %f\n", Slot, GPS.Altitude, Positions[Slot].LatitudeDelta, Positions[Slot].LongitudeDelta);
+        Serial.printf("Slot %d (%" PRId32 "): %f, %f\r\n", Slot, GPS.Altitude, Positions[Slot].LatitudeDelta, Positions[Slot].LongitudeDelta);
       }
-      else if ((GPS.FlightMode >= fmDescending) && (GPS.FlightMode <= fmLanding))
+      else if (GPS.FlightMode = fmDescending)
       {
         // Coming down - try and calculate how well chute is doing
-        
-        GPS.CDA = (GPS.CDA*4 + CalculateCDA(Settings.Prediction_Weight, GPS.Altitude/2 + PreviousAltitude/2, (PreviousAltitude - GPS.Altitude) / POLL_PERIOD)) / 5;
+
+        GPS.CDA = (GPS.CDA*4 + CalculateCDA(Settings.Prediction_Weight,
+                                            (float)(GPS.Altitude + PreviousAltitude)/2,
+                                            (float)(PreviousAltitude - GPS.Altitude) / POLL_PERIOD)) / 5;
       }
 
       // Estimate landing position
       GPS.TimeTillLanding = CalculateLandingPosition(GPS.Latitude, GPS.Longitude, GPS.Altitude, &(GPS.PredictedLatitude), &(GPS.PredictedLongitude));
       
-      GPS.PredictedLandingSpeed = CalculateDescentRate(Settings.Prediction_Weight, GPS.CDA, Settings.Prediction_Altitude);
+      GPS.PredictedLandingSpeed = CalculateDescentRate(Settings.Prediction_Weight, GPS.CDA, (float)(Settings.Prediction_Altitude));
       
-      Serial.printf("Expected Descent Rate = %4.1f (now) %3.1f (landing), time till landing %d\n", 
+      Serial.printf("PRED=%.1f,%.1f,%.0f,%.1f,%.5f,%.5f\r\n", 
                     CalculateDescentRate(Settings.Prediction_Weight, GPS.CDA, GPS.Altitude),
-                    GPS.PredictedLandingSpeed, GPS.TimeTillLanding);
-      
-      Serial.printf("Current    %f, %f, alt %" PRId32 "\n", GPS.Latitude, GPS.Longitude, GPS.Altitude);
-      Serial.printf("Prediction %f, %f, CDA %f\n", GPS.PredictedLatitude, GPS.PredictedLongitude, GPS.CDA);
+                    GPS.PredictedLandingSpeed, GPS.TimeTillLanding, GPS.CDA,
+                    GPS.PredictedLatitude, GPS.PredictedLongitude);
     }
       
     PreviousLatitude = GPS.Latitude;
@@ -132,7 +121,16 @@ void CheckPrediction(void)
   }
 }  
 
-int CalculateLandingPosition(float Latitude, float Longitude, int32_t Altitude, float *PredictedLatitude, float *PredictedLongitude)
+float CalculateDescentRate(float Weight, float CDTimesArea, float Altitude)
+{
+  float Density;
+  
+  Density = CalculateAirDensity(Altitude);
+
+  return sqrt((Weight * 9.81)/(0.5 * Density * CDTimesArea));
+}
+
+float CalculateLandingPosition(float Latitude, float Longitude, long Altitude, float *PredictedLatitude, float *PredictedLongitude)
 {
   float TimeTillLanding, TimeInSlot, DescentRate;
   int Slot;
@@ -142,8 +140,8 @@ int CalculateLandingPosition(float Latitude, float Longitude, int32_t Altitude, 
   
   Slot = GetSlot(Altitude);
   DistanceInSlot = Altitude + 1 - (Slot * SLOTSIZE);
-  
-  while (Altitude > Settings.Prediction_Altitude)
+
+   while (Altitude > Settings.Prediction_Altitude)
   {
     Slot = GetSlot(Altitude);
     
@@ -152,13 +150,13 @@ int CalculateLandingPosition(float Latitude, float Longitude, int32_t Altitude, 
       DistanceInSlot = Altitude - Settings.Prediction_Altitude;
     }
     
-    DescentRate = CalculateDescentRate(Settings.Prediction_Altitude, GPS.CDA, Altitude);
+    DescentRate = CalculateDescentRate(Settings.Prediction_Weight, GPS.CDA, Altitude);
     TimeInSlot = DistanceInSlot / DescentRate;
     
     Latitude += Positions[Slot].LatitudeDelta * TimeInSlot;
     Longitude += Positions[Slot].LongitudeDelta * TimeInSlot;
     
-    // printf("SLOT %d: alt %lu, lat=%f, long=%f, rate=%f, dist=%lu, time=%f\n", Slot, Altitude, Latitude, Longitude, DescentRate, DistanceInSlot, TimeInSlot);
+    // Serial.printf("SLOT %d: alt %lu, lat=%f, long=%f, rate=%f, dist=%lu, time=%f\r\n", Slot, Altitude, Latitude, Longitude, DescentRate, DistanceInSlot, TimeInSlot);
     
     TimeTillLanding = TimeTillLanding + TimeInSlot;
     Altitude -= DistanceInSlot;

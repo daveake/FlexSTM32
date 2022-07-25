@@ -4,12 +4,12 @@
 |                                                                                                        |
 \*------------------------------------------------------------------------------------------------------*/
 
-#define   VERSION     "V1.04"
+#define   VERSION     "V1.05"
 #define   PRODUCT     "FlexTrak"
 #define   DESCRIPTION "FlexTrak STM32"
 
 #define SIG_1   'D'
-#define SIG_2   'A'
+#define SIG_2   'B'
 
 #include <FlashStorage_STM32.h>
 
@@ -88,7 +88,7 @@ struct TSettings
   // Prediction
   float         Prediction_CDA;
   float         Prediction_Weight;
-  unsigned int  Prediction_Altitude;
+  long          Prediction_Altitude;
 
   // Cutdown
   unsigned int  CutdownAltitude;
@@ -102,7 +102,7 @@ struct TSettings
   unsigned char DS18B20_Address[8];
 } Settings;
 
-typedef enum {fmIdle, fmLaunched, fmDescending, fmLanding, fmLanded} TFlightMode;
+typedef enum {fmIdle, fmLaunched, fmDescending, fmLanded} TFlightMode;
 
 struct TGPS
 {
@@ -125,7 +125,7 @@ struct TGPS
   float         PredictedLongitude, PredictedLatitude;
   byte          UseHostPosition;
   float         CDA, PredictedLandingSpeed;
-  int           TimeTillLanding;
+  float         TimeTillLanding;
   int           LastPacketSNR;
   int           LastPacketRSSI;
   unsigned int  ReceivedCommandCount;
@@ -276,31 +276,18 @@ void ShowVersion(void)
 
 void LoadSettings(void)
 {
-  unsigned int i;
-  unsigned char *ptr;
-
-  ptr = (unsigned char *)(&Settings);
-  for (i=0; i<sizeof(Settings); i++, ptr++)
-  {
-    *ptr = EEPROM.read(i+2);
-  }
+  EEPROM.get(2, Settings);
 }
 
 void SaveSettings(void)
 {
-  unsigned int i;
-  unsigned char *ptr;
-
   // Signature
-  EEPROM.write(0, SIG_1);
-  EEPROM.write(1, SIG_2);
+  EEPROM.update(0, SIG_1);
+  EEPROM.update(1, SIG_2);
 
   // Settings
-  ptr = (unsigned char *)(&Settings);
-  for (i=0; i<sizeof(Settings); i++, ptr++)
-  {
-    EEPROM.write(i+2, *ptr);
-  }
+  EEPROM.put(2, Settings);
+
   EEPROM.commit();
 }
 
@@ -335,8 +322,11 @@ int CheckHost(void)
     }
     else if (Character == '\r')
     {
-      Line[Length] = '\0';
-      ProcessCommand(Line+1);
+      if (Length >= 3)
+      {
+        Line[Length] = '\0';
+        ProcessCommand(Line+1);
+      }
       Length = 0;
     }
     else if (Length >= sizeof(Line))
@@ -431,7 +421,7 @@ int ProcessPredictionCommand(char *Line)
   else if (Line[0] == 'L')
   {
     // Landing Altitude
-    int LandingAltitude = atol(Line+1);
+    long LandingAltitude = atol(Line+1);
     
     if ((LandingAltitude >= 0) && (LandingAltitude <= 5000))
     {
@@ -523,12 +513,12 @@ int ProcessCommonCommand(char *Line)
   }
   else if (Line[0] == 'C')
   {
-    Serial.printf("PROD=%s\n", PRODUCT);
+    Serial.printf("PROD=%s\r\n", PRODUCT);
     OK = 1;
   }
   else if (Line[0] == 'D')
   {
-    Serial.printf("DESC=%s\n", DESCRIPTION);
+    Serial.printf("DESC=%s\r\n", DESCRIPTION);
     OK = 1;
   }
   else if (Line[0] == 'A')
@@ -813,7 +803,10 @@ int ProcessFieldCommand(char *Line)
   }
   else if (Line[0] == 'U')
   {
+    GPS.PreviousAltitude = GPS.Altitude;
     GPS.Altitude = atoi(Line+1);
+    GPS.AscentRate = GPS.AscentRate * 0.7 + (GPS.Altitude - GPS.PreviousAltitude) * 0.3;
+    
     GPS.UseHostPosition = 5;
     OK = 1;
   }
@@ -852,41 +845,41 @@ unsigned char HexToByte(char ch)
 
 void SendSettings(void)
 {
-  Serial.printf("CP=%s\n", Settings.PayloadID);
-  Serial.printf("CF=%s\n", Settings.FieldList);
+  Serial.printf("CP=%s\r\n", Settings.PayloadID);
+  Serial.printf("CF=%s\r\n", Settings.FieldList);
 
-  Serial.printf("CA=%ld\n", Settings.CutdownAltitude);
-  Serial.printf("CT=%u\n", Settings.CutdownPeriod);
+  Serial.printf("CA=%ld\r\n", Settings.CutdownAltitude);
+  Serial.printf("CT=%u\r\n", Settings.CutdownPeriod);
 
-  Serial.printf("GF=%u\n", Settings.FlightModeAltitude);
+  Serial.printf("GF=%u\r\n", Settings.FlightModeAltitude);
 
-  Serial.printf("LF=%.4f\n", Settings.LORAFrequency);
-  // Serial.printf("LM=%u\n", Settings.LoRaMode);
+  Serial.printf("LF=%.4f\r\n", Settings.LORAFrequency);
+  // Serial.printf("LM=%u\r\n", Settings.LoRaMode);
 
-  Serial.printf("LT=%u\n", Settings.LoRaCycleTime);
-  Serial.printf("LO=%u\n", Settings.LoRaSlot);
-//  Serial.printf("L1=%d\n", Settings.LoRaRepeatSlot1);
-//  Serial.printf("L2=%d\n", Settings.LoRaRepeatSlot2);
+  Serial.printf("LT=%u\r\n", Settings.LoRaCycleTime);
+  Serial.printf("LO=%u\r\n", Settings.LoRaSlot);
+//  Serial.printf("L1=%d\r\n", Settings.LoRaRepeatSlot1);
+//  Serial.printf("L2=%d\r\n", Settings.LoRaRepeatSlot2);
   
-//  Serial.printf("LB=%d\n", Settings.UseBinaryMode);
-//  Serial.printf("LN=%d\n", Settings.BinaryNode);
+//  Serial.printf("LB=%d\r\n", Settings.UseBinaryMode);
+//  Serial.printf("LN=%d\r\n", Settings.BinaryNode);
 
-//  Serial.printf("LC=%u\n", Settings.CallingCount);
+//  Serial.printf("LC=%u\r\n", Settings.CallingCount);
 
-  Serial.printf("LE=%u\n", Settings.EnableUplink);
-  Serial.printf("LU=%s\n", Settings.UplinkCode);
+  Serial.printf("LE=%u\r\n", Settings.EnableUplink);
+  Serial.printf("LU=%s\r\n", Settings.UplinkCode);
 
-  Serial.printf("PC=%.1f\n", Settings.Prediction_CDA);
-  Serial.printf("PW=%.2f\n", Settings.Prediction_Weight);
-  Serial.printf("PL=%ld\n", Settings.Prediction_Altitude);
+  Serial.printf("PC=%.1f\r\n", Settings.Prediction_CDA);
+  Serial.printf("PW=%.2f\r\n", Settings.Prediction_Weight);
+  Serial.printf("PL=%ld\r\n", Settings.Prediction_Altitude);
 
-  Serial.printf("AF=%.4f\n", Settings.APRS_Frequency);
-  Serial.printf("AP=%s\n", Settings.APRS_Callsign);
-  Serial.printf("AS=%d\n", Settings.APRS_SSID);
-  Serial.printf("AA=%d\n", Settings.APRS_PathAltitude);
-  Serial.printf("AW=%d\n", Settings.APRS_HighUseWide2 > 0);
-  Serial.printf("AI=%d\n", Settings.APRS_TxInterval);
-  Serial.printf("AM=%d\n", Settings.APRS_PreEmphasis > 0);
-  Serial.printf("AR=%d\n", Settings.APRS_Random);
-  Serial.printf("AT=%d\n", Settings.APRS_TelemInterval);
+  Serial.printf("AF=%.4f\r\n", Settings.APRS_Frequency);
+  Serial.printf("AP=%s\r\n", Settings.APRS_Callsign);
+  Serial.printf("AS=%d\r\n", Settings.APRS_SSID);
+  Serial.printf("AA=%d\r\n", Settings.APRS_PathAltitude);
+  Serial.printf("AW=%d\r\n", Settings.APRS_HighUseWide2 > 0);
+  Serial.printf("AI=%d\r\n", Settings.APRS_TxInterval);
+  Serial.printf("AM=%d\r\n", Settings.APRS_PreEmphasis > 0);
+  Serial.printf("AR=%d\r\n", Settings.APRS_Random);
+  Serial.printf("AT=%d\r\n", Settings.APRS_TelemInterval);
 }

@@ -287,7 +287,7 @@ void DecryptMessage(char *Code, char *Message)
   
   if (Len > 0)
   {
-    printf("Decoding ...\n");
+    printf("Decoding ...\r\n");
     i = 0;
     while (*Message)
     {
