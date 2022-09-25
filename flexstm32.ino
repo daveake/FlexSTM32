@@ -4,7 +4,7 @@
 |                                                                                                        |
 \*------------------------------------------------------------------------------------------------------*/
 
-#define   VERSION     "V1.05"
+#define   VERSION     "V1.06"
 #define   PRODUCT     "FlexTrak"
 #define   DESCRIPTION "FlexTrak STM32"
 
@@ -100,6 +100,9 @@ struct TSettings
 
   // DS18B20
   unsigned char DS18B20_Address[8];
+
+  unsigned char IncludeFieldList;
+  
 } Settings;
 
 typedef enum {fmIdle, fmLaunched, fmDescending, fmLanded} TFlightMode;
@@ -533,6 +536,12 @@ int ProcessCommonCommand(char *Line)
      Settings.CutdownPeriod = atoi(Line+1);
      OK = 1;
   }
+  else if (Line[0] == 'L')
+  {
+    // Enable/Disable Field List
+     Settings.IncludeFieldList = Line[1] == '1';
+     OK = 1;
+  }
 
   return OK;
 }
@@ -847,6 +856,7 @@ void SendSettings(void)
 {
   Serial.printf("CP=%s\r\n", Settings.PayloadID);
   Serial.printf("CF=%s\r\n", Settings.FieldList);
+  Serial.printf("CL=%d\n", Settings.IncludeFieldList ? 1 : 0);
 
   Serial.printf("CA=%ld\r\n", Settings.CutdownAltitude);
   Serial.printf("CT=%u\r\n", Settings.CutdownPeriod);

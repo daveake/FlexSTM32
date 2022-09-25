@@ -162,6 +162,7 @@ void ProcessNMEA(char *Buffer, int Count)
         {
           GPS.FlightMode = fmLaunched;
           Serial.println("*** LAUNCHED ***");
+          ResetPredictionData();
         }
 
         // Burst?

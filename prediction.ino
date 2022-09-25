@@ -69,7 +69,12 @@ void SetupPrediction(void)
   PreviousLongitude = 0;
   PreviousAltitude = 0;
   
-  GPS.CDA = Settings.Prediction_CDA; 
+  GPS.CDA = Settings.Prediction_CDA;
+}
+
+void ResetPredictionData(void)
+{
+  memset(Positions, 0, sizeof(Positions));
 }
 
 void CheckPrediction(void)
@@ -93,15 +98,18 @@ void CheckPrediction(void)
         // Deltas are scaled to be horizontal distance per second (i.e. speed)
         Positions[Slot].LatitudeDelta = (GPS.Latitude - PreviousLatitude) / POLL_PERIOD;
         Positions[Slot].LongitudeDelta = (GPS.Longitude - PreviousLongitude) / POLL_PERIOD;
-        Serial.printf("Slot %d (%" PRId32 "): %f, %f\r\n", Slot, GPS.Altitude, Positions[Slot].LatitudeDelta, Positions[Slot].LongitudeDelta);
+        Serial.printf("SLOT=%d,%f,%f\r", Slot, Positions[Slot].LatitudeDelta, Positions[Slot].LongitudeDelta);
       }
       else if (GPS.FlightMode = fmDescending)
       {
         // Coming down - try and calculate how well chute is doing
 
-        GPS.CDA = (GPS.CDA*4 + CalculateCDA(Settings.Prediction_Weight,
-                                            (float)(GPS.Altitude + PreviousAltitude)/2,
-                                            (float)(PreviousAltitude - GPS.Altitude) / POLL_PERIOD)) / 5;
+        if (GPS.Altitude < PreviousAltitude)
+        {
+          GPS.CDA = (GPS.CDA*4 + CalculateCDA(Settings.Prediction_Weight,
+                                              (float)(GPS.Altitude + PreviousAltitude)/2,
+                                              (float)(PreviousAltitude - GPS.Altitude) / POLL_PERIOD)) / 5;
+        }
       }
 
       // Estimate landing position

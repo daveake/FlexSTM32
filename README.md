@@ -33,6 +33,11 @@ For debugging, purchase a “USB-TTL” serial adapter, connected to the Tx/Rx/G
 
 ## Releases
 
+V1.06	-	Setting to include field list in telemetry
+					Changes to ease testing:
+						Clear prediction table at launch
+						Reformat serial output of prediction table
+
 V1.05	-	Fixed bug in landing prediction
 					Tidy serial output and make it more consistent				
 
